@@ -1213,8 +1213,10 @@ module Net
       def query_udp(packet, packet_data)
         socket4 = UDPSocket.new
         socket4.bind(@config[:source_address].to_s,@config[:source_port])
-        socket6 = UDPSocket.new(Socket::AF_INET6)
-        socket6.bind(@config[:source_address_inet6].to_s,@config[:source_port])
+        if @config[:nameservers].any? { |ns| ns.ipv6? }
+          socket6 = UDPSocket.new(Socket::AF_INET6)
+          socket6.bind(@config[:source_address_inet6].to_s,@config[:source_port])
+        end
 
         ans = nil
         response = ""
