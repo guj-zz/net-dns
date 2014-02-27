@@ -1204,6 +1204,7 @@ module Net
             socket.close
           end
         end
+        ans
       end
 
       def query_udp(packet, packet_data)
