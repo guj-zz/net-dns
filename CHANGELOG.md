@@ -1,5 +1,10 @@
 # Changelog
 
+## Release 0.8.2
+ - FIXED: Exception when using new raw support issue #2
+ - FIXED: Gemspec file has wrong emails
+ - FIXED: Removed debug statement from raw support
+
 ## Release 0.8.1
  - First release from fork by Christopher Carpenter(mordocai@mordocai.net)
  - FIXED: Multiple bugs with Resolver::source_address= preventing it from
