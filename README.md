@@ -22,14 +22,14 @@ Net::DNS is a DNS library written in pure Ruby. It started as a port of Perl Net
 
 The best way to install this library is via [RubyGems](https://rubygems.org/).
 
-    $ gem install net-dns
+    $ gem install net-dns2
 
 You might need administrator privileges on your system to install the gem.
 
 
 ## API Documentation
 
-Visit the page http://rdoc.info/gems/net-dns
+Visit the page http://rdoc.info/gems/net-dns2
 
 
 ## Trivial resolver
