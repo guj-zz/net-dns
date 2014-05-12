@@ -1018,7 +1018,13 @@ module Net
 
         ans = self.send(method, packet, packet_data)
 
-        unless ans
+        # Don't have any responses with the raw,
+        # since currently raw is only used when source_address is changed
+        if @raw
+          return nil
+        end
+
+        if not ans
           message = "No response from nameservers list"
           @logger.fatal(message)
           raise NoResponseError, message
