@@ -108,6 +108,7 @@ module Net
         :source_port => 0,
         :source_address => IPAddr.new("0.0.0.0"),
         :source_address_inet6 => IPAddr.new('::'),
+        :interface => "eth0",
         :retry_interval => 5,
         :retry_number => 4,
         :recursive => true,
@@ -462,7 +463,11 @@ module Net
       def source_address_inet6
         @config[:source_address_inet6].to_s
       end
-      
+
+      def interface
+        @config[:interface]
+      end
+
       # Set the local source address from which the resolver sends its queries.
       #
       #   res.source_address = "172.16.100.1"
@@ -522,6 +527,10 @@ module Net
         end
       end
       alias srcaddr= source_address=
+
+      def interface=(iface)
+        @config[:interface] = iface
+      end
 
       # Return the retrasmission interval (in seconds) the resolvers has
       # been set on.
