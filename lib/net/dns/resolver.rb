@@ -3,6 +3,8 @@ require 'socket'
 require 'timeout'
 require 'net/dns/packet'
 require 'net/dns/resolver/timeouts'
+require 'packetfu'
+require 'ipaddr'
 
 # Resolver helper method.
 #
@@ -483,7 +485,7 @@ module Net
       # Another way to use this option is for some kind of spoofing attacks
       # towards weak nameservers, to probe the security of your network.
       # This includes specifing ranged attacks such as DoS and others. For
-      # a paper on DNS security, checks http://www.marcoceresa.com/security/
+      # a paper on DNS security, checks htpt://www.marcoceresa.com/security/
       #
       # Note that if you want to set a non-binded source address you need
       # root priviledges, as raw sockets will be used to generate packets.
@@ -511,13 +513,13 @@ module Net
           else
             raise SystemCallError, e
           end
-        ensure
+        else
           a.close
         end
 
         case addr
         when String
-          @config[:source_address] = IPAddr.new(string)
+          @config[:source_address] = IPAddr.new(addr)
           @logger.info "Using new source address: #{@config[:source_address]}"
         when IPAddr
           @config[:source_address] = addr
@@ -959,7 +961,7 @@ module Net
       #
       #   ip = IPAddr.new("172.16.100.2")
       #   packet = res.query(ip)
-      #   
+      #
       #   packet = res.query("172.16.100.2")
       #
       # Use +packet.header.ancount+ or +packet.answer+ to find out if there
@@ -1000,6 +1002,7 @@ module Net
             method = :query_tcp
           else # Finally use UDP
             @logger.info "Sending #{packet_size} bytes using UDP"
+            method = :query_udp
           end
         end
 
