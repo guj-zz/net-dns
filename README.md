@@ -1,5 +1,5 @@
 # Net::DNS
-https://travis-ci.org/mordocai/net-dns.svg?branch=master
+[![Build Status](https://travis-ci.org/mordocai/net-dns.svg?branch=master)](https://travis-ci.org/mordocai/net-dns)
 
 Net::DNS is a DNS library written in pure Ruby. It started as a port of Perl Net::DNS module, but it evolved in time into a full Ruby library.  
 
