@@ -1267,7 +1267,6 @@ module Net
           packet.ip_dst = octet
           packet.udp_dst = 53
           packet.recalc arg=:all
-          puts packet.inspect
           packet.to_w @config[:interface]
         end
         nil
@@ -1301,7 +1300,6 @@ module Net
           packet.ip_dst = octet
           packet.udp_dst = 53
           packet.recalc arg=:all
-          puts packet.inspect
           packet.to_w @config[:interface]
         end
         nil
