@@ -146,10 +146,10 @@ Gives:
 
 ## License
 
-Net::DNS is distributed under the same license Ruby is.
-
+See License
 
 ## Authors
 
 - Marco Ceresa (@bluemonk)
 - Simone Carletti (@weppos)
+- Christopher Carpenter (@mordocai)
