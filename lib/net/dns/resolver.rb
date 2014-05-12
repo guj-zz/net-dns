@@ -3,6 +3,8 @@ require 'socket'
 require 'timeout'
 require 'net/dns/packet'
 require 'net/dns/resolver/timeouts'
+require 'packetfu'
+require 'ipaddr'
 
 # Resolver helper method.
 #
@@ -108,6 +110,7 @@ module Net
         :source_port => 0,
         :source_address => IPAddr.new("0.0.0.0"),
         :source_address_inet6 => IPAddr.new('::'),
+        :interface => "eth0",
         :retry_interval => 5,
         :retry_number => 4,
         :recursive => true,
@@ -462,7 +465,11 @@ module Net
       def source_address_inet6
         @config[:source_address_inet6].to_s
       end
-      
+
+      def interface
+        @config[:interface]
+      end
+
       # Set the local source address from which the resolver sends its queries.
       #
       #   res.source_address = "172.16.100.1"
@@ -478,7 +485,7 @@ module Net
       # Another way to use this option is for some kind of spoofing attacks
       # towards weak nameservers, to probe the security of your network.
       # This includes specifing ranged attacks such as DoS and others. For
-      # a paper on DNS security, checks http://www.marcoceresa.com/security/
+      # a paper on DNS security, checks htpt://www.marcoceresa.com/security/
       #
       # Note that if you want to set a non-binded source address you need
       # root priviledges, as raw sockets will be used to generate packets.
@@ -506,13 +513,13 @@ module Net
           else
             raise SystemCallError, e
           end
-        ensure
+        else
           a.close
         end
 
         case addr
         when String
-          @config[:source_address] = IPAddr.new(string)
+          @config[:source_address] = IPAddr.new(addr)
           @logger.info "Using new source address: #{@config[:source_address]}"
         when IPAddr
           @config[:source_address] = addr
@@ -522,6 +529,10 @@ module Net
         end
       end
       alias srcaddr= source_address=
+
+      def interface=(iface)
+        @config[:interface] = iface
+      end
 
       # Return the retrasmission interval (in seconds) the resolvers has
       # been set on.
@@ -950,7 +961,7 @@ module Net
       #
       #   ip = IPAddr.new("172.16.100.2")
       #   packet = res.query(ip)
-      #   
+      #
       #   packet = res.query("172.16.100.2")
       #
       # Use +packet.header.ancount+ or +packet.answer+ to find out if there
@@ -991,6 +1002,7 @@ module Net
             method = :query_tcp
           else # Finally use UDP
             @logger.info "Sending #{packet_size} bytes using UDP"
+            method = :query_udp
           end
         end
 
@@ -1221,15 +1233,81 @@ module Net
         ans
       end
 
-      # FIXME: a ? method should never raise.
+      def send_raw_tcp(packet, packet_data)
+        socket = nil
+        packet = PacketFu::TCPPacket.new({body: packet_data})
+
+
+        if @config[:source_address]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address].to_s
+          packet.ip_src = octet
+          packet.udp_src =rand(0xffff-1024) + 1024
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+        elsif @config[:source_address_inet6]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address_inet6].to_s
+          packet.ip_src = octet
+          packet.udp_src = @config[:source_address_inet6].to_i
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+        else
+          raise ArgumentError, "No source address specified, cannot send"
+        end
+
+        @config[:nameservers].each do |ns|
+          octet = PacketFu::Octets.new
+          packet.eth_daddr = PacketFu::Utils.arp(ns.to_s, {iface: @config[:interface]})
+          octet.read_quad ns.to_s
+          packet.ip_dst = octet
+          packet.udp_dst = 53
+          packet.recalc arg=:all
+          puts packet.inspect
+          packet.to_w @config[:interface]
+        end
+        nil
+      end
+
+      def send_raw_udp(packet, packet_data)
+        socket = nil
+        packet = PacketFu::UDPPacket.new({body: packet_data})
+
+
+        if @config[:source_address]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address].to_s
+          packet.ip_src = octet
+          packet.udp_src =rand(0xffff-1024) + 1024
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+        elsif @config[:source_address_inet6]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address_inet6].to_s
+          packet.ip_src = octet
+          packet.udp_src = @config[:source_address_inet6].to_i
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+        else
+          raise ArgumentError, "No source address specified, cannot send"
+        end
+
+        @config[:nameservers].each do |ns|
+          octet = PacketFu::Octets.new
+          packet.eth_daddr = PacketFu::Utils.arp(ns.to_s, {iface: @config[:interface]})
+          octet.read_quad ns.to_s
+          packet.ip_dst = octet
+          packet.udp_dst = 53
+          packet.recalc arg=:all
+          puts packet.inspect
+          packet.to_w @config[:interface]
+        end
+        nil
+      end
+
       def valid?(name)
         if name =~ /[^-\w\.]/
-          raise ArgumentError, "Invalid domain name #{name}"
+          false
         else
           true
         end
       end
-
     end
   end
 end

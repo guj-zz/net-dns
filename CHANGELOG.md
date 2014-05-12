@@ -1,5 +1,13 @@
 # Changelog
 
+## Release 0.8.1
+ - First release from fork by Christopher Carpenter(mordocai@mordocai.net)
+ - FIXED: Multiple bugs with Resolver::source_address= preventing it from
+	  executing.
+ - FIXED: Implemented send_raw_tcp and send_raw_udp
+ - CHANGED: Added interface config parameter for Net::DNS::Resolver,
+            currently only used by send_raw*
+ - CHANGED: Added TODO file for known things that I need to do.
 
 ## Release 0.8.0
 
