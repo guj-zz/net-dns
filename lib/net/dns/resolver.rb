@@ -1233,7 +1233,74 @@ module Net
         ans
       end
 
-      # FIXME: a ? method should never raise.
+      def send_raw_tcp(packet, packet_data)
+        socket = nil
+        packet = PacketFu::TCPPacket.new({body: packet_data})
+
+
+        if @config[:source_address]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address].to_s
+          packet.ip_src = octet
+          packet.udp_src =rand(0xffff-1024) + 1024
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+        elsif @config[:source_address_inet6]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address_inet6].to_s
+          packet.ip_src = octet
+          packet.udp_src = @config[:source_address_inet6].to_i
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+        else
+          raise ArgumentError, "No source address specified, cannot send"
+        end
+
+        @config[:nameservers].each do |ns|
+          octet = PacketFu::Octets.new
+          packet.eth_daddr = PacketFu::Utils.arp(ns.to_s, {iface: @config[:interface]})
+          octet.read_quad ns.to_s
+          packet.ip_dst = octet
+          packet.udp_dst = 53
+          packet.recalc arg=:all
+          puts packet.inspect
+          packet.to_w @config[:interface]
+        end
+        nil
+      end
+
+      def send_raw_udp(packet, packet_data)
+        socket = nil
+        packet = PacketFu::UDPPacket.new({body: packet_data})
+
+
+        if @config[:source_address]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address].to_s
+          packet.ip_src = octet
+          packet.udp_src =rand(0xffff-1024) + 1024
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+        elsif @config[:source_address_inet6]
+          octet = PacketFu::Octets.new
+          octet.read_quad @config[:source_address_inet6].to_s
+          packet.ip_src = octet
+          packet.udp_src = @config[:source_address_inet6].to_i
+          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+        else
+          raise ArgumentError, "No source address specified, cannot send"
+        end
+
+        @config[:nameservers].each do |ns|
+          octet = PacketFu::Octets.new
+          packet.eth_daddr = PacketFu::Utils.arp(ns.to_s, {iface: @config[:interface]})
+          octet.read_quad ns.to_s
+          packet.ip_dst = octet
+          packet.udp_dst = 53
+          packet.recalc arg=:all
+          puts packet.inspect
+          packet.to_w @config[:interface]
+        end
+        nil
+      end
+
       def valid?(name)
         if name =~ /[^-\w\.]/
           false
