@@ -13,7 +13,7 @@ rvm:
 
 notifications:
   recipients:
-    - weppos@weppos.net
+    - mordocai@mordocai.net
 
 matrix:
   allow_failures:
