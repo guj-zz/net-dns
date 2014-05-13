@@ -109,11 +109,11 @@ module Net
       # network streams. Please use <tt>Net::DNS::Packet.parse</tt> instead.
       def initialize(name = nil, type = Net::DNS::A, cls = Net::DNS::IN)
         default_qdcount = 0
-        @question []
+        @question = []
 
         if not name.nil?
           default_qdcount = 1
-          @question = Net::DNS::Question.new(name, type, cls)
+          @question = [Net::DNS::Question.new(name, type, cls)]
         end
 
         @header = Net::DNS::Header.new(:qdCount => default_qdcount)

@@ -114,15 +114,13 @@ module Net # :nodoc:
         parts.delete_at(parts.length-1) if parts.last.empty? # the domain may end with a dot
 
         parts.each do |part|
-          if not part =~ /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/i
-             or part.length < 1
-             or part.length > 63
+          if not part =~ /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/i or part.length < 1 or part.length > 63
             return false
+          end
         end
 
         return true
       end
-
     end
   end
 end
