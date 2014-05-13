@@ -103,6 +103,11 @@ describe Net::DNS::Resolver do
     end
   end
 
+  it "returns TXT records properly" do
+    result = Net::DNS::Resolver.new.query "google.com", Net::DNS::TXT
+    result.answer.first.should be_a Net::DNS::RR::TXT
+  end
+
   context "packet_size set" do
     before :all do
       @resolv = Net::DNS::Resolver.new({packet_size: 2048})
