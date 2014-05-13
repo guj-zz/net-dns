@@ -1135,20 +1135,15 @@ module Net
       end
 
       def make_query_packet(string, type, cls)
-        case string
-        when IPAddr
-          name = string.reverse
+        begin
+          name = IPAddr.new(string.chomp(".")).reverse
           type = Net::DNS::PTR
-          @logger.warn "PTR query required for address #{string}, changing type to PTR"
-        when /\d/ # Contains a number, try to see if it's an IP or IPv6 address
-          begin
-            name = IPAddr.new(string.chomp(".")).reverse
-            type = Net::DNS::PTR
-          rescue ArgumentError
-            name = string if valid? string
-          end
-        else
+        rescue ArgumentError
           name = string if valid? string
+        end
+
+        if name.nil?
+          raise ArgumentError, "Bad query string"
         end
 
         # Create the packet
