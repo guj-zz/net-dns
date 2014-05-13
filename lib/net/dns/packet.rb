@@ -108,8 +108,15 @@ module Net
       # This class no longer instantiate object from binary data coming from
       # network streams. Please use <tt>Net::DNS::Packet.parse</tt> instead.
       def initialize(name = nil, type = Net::DNS::A, cls = Net::DNS::IN)
-        @header = Net::DNS::Header.new(:qdCount => name.nil? ? 0 : 1)
-        @question = name.nil? ? [] : [Net::DNS::Question.new(name, type, cls)]
+        default_qdcount = 0
+        @question []
+
+        if not name.nil?
+          default_qdcount = 1
+          @question = Net::DNS::Question.new(name, type, cls)
+        end
+
+        @header = Net::DNS::Header.new(:qdCount => default_qdcount)
         @answer = []
         @authority = []
         @additional = []

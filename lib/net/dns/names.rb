@@ -54,7 +54,7 @@ module Net # :nodoc:
       end
 
       def pack_name(name)
-        if name.size > 255 
+        if name.size > 255
           raise ArgumentError, "Name may not exceed 255 chars"
         end
         arr = name.split(".")
@@ -106,19 +106,21 @@ module Net # :nodoc:
       end
 
       def valid?(name)
-        raise ArgumentError, "Invalid FQDN: #{name}" if name.length < 1 or name.length > 255
+        return false if name.length < 1 or name.length > 255
 
-        return name if name == '.' # the root domain is the only valid domain that begins with a dot
+        return true if name == '.' # the root domain is the only valid domain that begins with a dot
 
         parts = name.split('.', -1)
         parts.delete_at(parts.length-1) if parts.last.empty? # the domain may end with a dot
 
         parts.each do |part|
-          raise ArgumentError, "Invalid FQDN: #{name}" if
-            not part =~ /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/i or part.length < 1 or part.length > 63
+          if not part =~ /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/i
+             or part.length < 1
+             or part.length > 63
+            return false
         end
 
-        return name
+        return true
       end
 
     end
