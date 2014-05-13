@@ -1,77 +1,21 @@
 require 'rubygems'
 require 'bundler'
+require 'rspec'
 
 $:.unshift(File.dirname(__FILE__) + '/lib')
 require 'net/dns'
 
 
-# Common package properties
-PKG_NAME    = ENV['PKG_NAME']    || 'net-dns'
-PKG_VERSION = ENV['PKG_VERSION'] || Net::DNS::VERSION
-
-
 # Run test by default.
-task :default => [:test, :spec]
+task :default => [:spec]
 
-
-spec = Gem::Specification.new do |s|
-  s.name              = PKG_NAME
-  s.version           = PKG_VERSION
-  s.summary           = "Pure Ruby DNS library."
-  s.description       = "Net::DNS is a pure Ruby DNS library, with a clean OO interface and an extensible API."
-
-  s.required_ruby_version = ">= 1.8.7"
-
-  s.authors           = ["Marco Ceresa", "Simone Carletti"]
-  s.email             = ["ceresa@gmail.com", "weppos@weppos.net"]
-  s.homepage          = "http://github.com/bluemonk/net-dns"
-  s.rubyforge_project = "net-dns"
-
-  s.add_development_dependency "rake"
-  s.add_development_dependency "rspec"
-  s.add_development_dependency "yard"
-
-  s.files             = `git ls-files`.split("\n")
-  s.test_files        = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.require_paths     = %w( lib )
-end
-
-
-require 'rubygems/package_task'
-
-Gem::PackageTask.new(spec) do |pkg|
-  pkg.gem_spec = spec
-end
-
-desc "Build the gemspec file #{spec.name}.gemspec"
-task :gemspec do
-  file = File.dirname(__FILE__) + "/#{spec.name}.gemspec"
-  File.open(file, "w") {|f| f << spec.to_ruby }
-end
-
-
-require 'rake/testtask'
-
-# Run all the tests in the /test folder
-Rake::TestTask.new do |t|
-  t.libs << "test"
-  t.test_files = FileList["test/**/*_test.rb"]
-  t.verbose = true
-end
-
-
+require 'rake'
 require 'rspec/core/rake_task'
-begin
-  require 'fuubar'
-rescue LoadError
-end
 
-RSpec::Core::RakeTask.new do |t|
-  t.verbose = !!ENV["VERBOSE"]
-  t.rspec_opts  = []
-  t.rspec_opts << ['--format', 'Fuubar'] if defined?(Fuubar)
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.pattern = FileList['spec/**/*_spec.rb']
+  t.rspec_opts = ["-r ./spec/spec_helper.rb"]
 end
-
 
 require 'yard'
 
