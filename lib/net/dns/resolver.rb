@@ -1107,18 +1107,20 @@ module Net
       end
 
       def convert_nameservers_arg_to_ips(arg)
-        case arg
-        when IPAddr ; [arg]
-        when String ;
+        if arg.kind_of? IPAddr
+          [arg]
+        elsif arg.respond_to? :map
+          arg.map{|x| convert_nameservers_arg_to_ips(x) }.flatten
+        elsif arg.respond_to? :to_a
+          arg.to_a.map{|x| convert_nameservers_arg_to_ips(x) }.flatten
+        elsif arg.respond_to? :to_s
           begin
-          [IPAddr.new(arg)]
+            [IPAddr.new(arg.to_s)]
           rescue ArgumentError # arg is in the name form, not IP
             nameservers_from_name(arg)
           end
-        when Array ;
-          arg.map{|x| convert_nameservers_arg_to_ips(x) }.flatten
         else
-          raise ArgumentError, "Wrong argument format, neither String, Array nor IPAddr"
+          raise ArgumentError, "Wrong nameservers argument format, cannot convert to array of IPAddrs"
         end
       end
 
