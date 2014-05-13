@@ -395,6 +395,15 @@ module Net
         @config[:packet_size]
       end
 
+      def packet_size=(arg)
+        if arg.respond_to? :to_i
+          @config[:packet_size] = arg.to_i
+          @logger.info "Packet size changed to value #{@config[:packet_size].inspect}"
+        else
+          @logger.error "Packet size not set, #{arg.class} does not respond to to_i"
+        end
+      end
+
       # Get the port number to which the resolver sends queries.
       #
       #   puts "Sending queries to port #{res.port}"
