@@ -508,8 +508,12 @@ module Net
             @logger.warn "Port already in use"
             retry
           when 99 # Address is not valid: raw socket
-            @raw = true
-            @logger.warn "Using raw sockets"
+            if Process.uid == 0
+              @raw = true
+              @logger.warn "Using raw sockets"
+            else
+              raise RuntimeError, "Raw sockets requested but not running as root."
+            end
           else
             raise SystemCallError, e
           end
