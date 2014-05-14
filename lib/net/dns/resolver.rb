@@ -345,38 +345,8 @@ module Net
       # The default is 127.0.0.1 (localhost)
       #
       def nameservers=(arg)
-        case arg
-        when String
-          begin
-            @config[:nameservers] = [IPAddr.new(arg)]
-            @logger.info "Nameservers list changed to value #{@config[:nameservers].inspect}"
-          rescue ArgumentError # arg is in the name form, not IP
-            nameservers_from_name(arg)
-          end
-        when IPAddr
-          @config[:nameservers] = [arg]
-          @logger.info "Nameservers list changed to value #{@config[:nameservers].inspect}"
-        when Array
-          @config[:nameservers] = []
-          arg.each do |x|
-            @config[:nameservers] << case x
-                                     when String
-                                       begin
-                                         IPAddr.new(x)
-                                       rescue ArgumentError
-                                         nameservers_from_name(arg)
-                                         return
-                                       end
-                                     when IPAddr
-                                       x
-                                     else
-                                       raise ArgumentError, "Wrong argument format"
-                                     end
-          end
-          @logger.info "Nameservers list changed to value #{@config[:nameservers].inspect}"
-        else
-          raise ArgumentError, "Wrong argument format, neither String, Array nor IPAddr"
-        end
+        @config[:nameservers] = convert_nameservers_arg_to_ips(arg)
+        @logger.info "Nameservers list changed to value #{@config[:nameservers].inspect}"
       end
       alias_method("nameserver=","nameservers=")
 
@@ -393,6 +363,15 @@ module Net
       # Return the defined size of the packet.
       def packet_size
         @config[:packet_size]
+      end
+
+      def packet_size=(arg)
+        if arg.respond_to? :to_i
+          @config[:packet_size] = arg.to_i
+          @logger.info "Packet size changed to value #{@config[:packet_size].inspect}"
+        else
+          @logger.error "Packet size not set, #{arg.class} does not respond to to_i"
+        end
       end
 
       # Get the port number to which the resolver sends queries.
@@ -1084,7 +1063,7 @@ module Net
         if self.class.platform_windows?
           require 'win32/resolv'
           arr = Win32::Resolv.get_resolv_info
-          self.domain = arr[0].to_s
+          self.domain = arr[0].first.to_s
           self.nameservers = arr[1]
         else
           nameservers = []
@@ -1127,6 +1106,24 @@ module Net
         end
       end
 
+      def convert_nameservers_arg_to_ips(arg)
+        if arg.kind_of? IPAddr
+          [arg]
+        elsif arg.respond_to? :map
+          arg.map{|x| convert_nameservers_arg_to_ips(x) }.flatten
+        elsif arg.respond_to? :to_a
+          arg.to_a.map{|x| convert_nameservers_arg_to_ips(x) }.flatten
+        elsif arg.respond_to? :to_s
+          begin
+            [IPAddr.new(arg.to_s)]
+          rescue ArgumentError # arg is in the name form, not IP
+            nameservers_from_name(arg)
+          end
+        else
+          raise ArgumentError, "Wrong nameservers argument format, cannot convert to array of IPAddrs"
+        end
+      end
+
       def nameservers_from_name(arg)
         arr = []
         arg.split(" ").each do |name|
@@ -1134,24 +1131,19 @@ module Net
             arr << ip
           end
         end
-        @config[:nameservers] << arr
+        arr
       end
 
       def make_query_packet(string, type, cls)
-        case string
-        when IPAddr
-          name = string.reverse
+        begin
+          name = IPAddr.new(string.chomp(".")).reverse
           type = Net::DNS::PTR
-          @logger.warn "PTR query required for address #{string}, changing type to PTR"
-        when /\d/ # Contains a number, try to see if it's an IP or IPv6 address
-          begin
-            name = IPAddr.new(string.chomp(".")).reverse
-            type = Net::DNS::PTR
-          rescue ArgumentError
-            name = string if valid? string
-          end
-        else
+        rescue ArgumentError
           name = string if valid? string
+        end
+
+        if name.nil?
+          raise ArgumentError, "Bad query string"
         end
 
         # Create the packet
@@ -1212,6 +1204,7 @@ module Net
             socket.close
           end
         end
+        ans
       end
 
       def query_udp(packet, packet_data)

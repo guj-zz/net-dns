@@ -3,7 +3,7 @@
 
 https://rubygems.org/gems/net-dns2
 
-Net::DNS is a DNS library written in pure Ruby. It started as a port of Perl Net::DNS module, but it evolved in time into a full Ruby library.  
+Net::DNS is a DNS library written in pure Ruby. It started as a port of Perl Net::DNS module, but it evolved in time into a full Ruby library.
 
 
 ## Features
@@ -11,6 +11,7 @@ Net::DNS is a DNS library written in pure Ruby. It started as a port of Perl Net
 - Complete OO interface
 - Clean and intuitive API
 - Modular and flexible
+- Source address spoofing (via source_address= on Net::DNS::Resolver)
 
 
 ## Requirements
@@ -36,7 +37,7 @@ Visit the page http://rdoc.info/gems/net-dns2
 
 The simplest way to use the library is to invoke the Resolver() method:
 
-    require 'rubygems' 
+    require 'rubygems'
     require 'net/dns'
     p Resolver("www.google.com")
 
@@ -49,21 +50,21 @@ The output is compatible with BIND zone files and it's the same you would get wi
     ;; qr = 1       opCode: QUERY   aa = 0  tc = 0  rd = 1
     ;; ra = 1       ad = 0  cd = 0  rcode = NoError
     ;; qdCount = 1  anCount = 3     nsCount = 4     arCount = 4
-    
+
     ;; QUESTION SECTION (1 record):
     ;; google.com.                  IN      A
-    
+
     ;; ANSWER SECTION (3 records):
     google.com.             212     IN      A       74.125.45.100
     google.com.             212     IN      A       74.125.67.100
     google.com.             212     IN      A       209.85.171.100
-    
+
     ;; AUTHORITY SECTION (4 records):
     google.com.             345512  IN      NS      ns1.google.com.
     google.com.             345512  IN      NS      ns4.google.com.
     google.com.             345512  IN      NS      ns2.google.com.
     google.com.             345512  IN      NS      ns3.google.com.
-    
+
     ;; ADDITIONAL SECTION (4 records):
     ns1.google.com.         170275  IN      A       216.239.32.10
     ns2.google.com.         170275  IN      A       216.239.34.10
@@ -83,7 +84,7 @@ Same for Net::DNS::Resolver.start():
 As optional parameters, +TYPE+ and +CLASS+ can be specified.
 
     p Net::DNS::Resolver.start("google.com", Net::DNS::MX)
-    
+
     ;; Answer received from localhost:53 (316 bytes)
     ;;
     ;; HEADER SECTION
@@ -91,10 +92,10 @@ As optional parameters, +TYPE+ and +CLASS+ can be specified.
     ;; qr = 1       opCode: QUERY   aa = 0  tc = 0  rd = 1
     ;; ra = 1       ad = 0  cd = 0  rcode = NoError
     ;; qdCount = 1  anCount = 4     nsCount = 4     arCount = 8
-    
+
     ;; QUESTION SECTION (1 record):
     ;; google.com.                  IN      MX
-    
+
     ;; ANSWER SECTION (4 records):
     google.com.             10800   IN      MX      10 smtp2.google.com.
     google.com.             10800   IN      MX      10 smtp3.google.com.
@@ -117,16 +118,16 @@ A DNS packet is divided into 5 sections:
 You can access each section by calling the attribute with the same name on a Packet object:
 
     packet = Net::DNS::Resolver.start("google.com")
-    
+
     header = packet.header
     answer = packet.answer
-    
+
     puts "The packet is #{packet.data.size} bytes"
     puts "It contains #{header.anCount} answer entries"
-    
+
     answer.any? {|ans| p ans}
-    
-The output is 
+
+The output is
 
     The packet is 378 bytes
     It contains 3 answer entries

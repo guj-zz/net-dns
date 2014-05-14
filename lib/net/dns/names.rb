@@ -15,7 +15,7 @@ module Net # :nodoc:
       INT16SZ = 2
 
       # Expand a compressed name in a DNS Packet object. Please
-      # see RFC1025 for an explanation of how the compression
+      # see RFC1035 for an explanation of how the compression
       # in DNS packets works, how may it be useful and how should
       # be handled.
       #
@@ -27,7 +27,7 @@ module Net # :nodoc:
         name = ""
         packetlen = packet.size
         while true
-          raise ExpandError, "Offset is greater than packet lenght!" if packetlen < (offset+1)
+          raise ExpandError, "Offset is greater than packet length!" if packetlen < (offset+1)
           len = packet.unpack("@#{offset} C")[0]
 
           if len == 0
@@ -54,7 +54,7 @@ module Net # :nodoc:
       end
 
       def pack_name(name)
-        if name.size > 255 
+        if name.size > 255
           raise ArgumentError, "Name may not exceed 255 chars"
         end
         arr = name.split(".")
@@ -106,13 +106,21 @@ module Net # :nodoc:
       end
 
       def valid?(name)
-        if name =~ /^([a-z0-9]([-a-z0-9]*[a-z0-9])?\.)+((a[cdefgilmnoqrstuwxz]|aero|arpa)|(b[abdefghijmnorstvwyz]|biz)|(c[acdfghiklmnorsuvxyz]|cat|com|coop)|d[ejkmoz]|(e[ceghrstu]|edu)|f[ijkmor]|(g[abdefghilmnpqrstuwy]|gov)|h[kmnrtu]|(i[delmnoqrst]|info|int)|(j[emop]|jobs)|k[eghimnprwyz]|l[abcikrstuvy]|(m[acdghklmnopqrstuvwxyz]|mil|mobi|museum)|(n[acefgilopruz]|name|net)|(om|org)|(p[aefghklmnrstwy]|pro)|qa|r[eouw]|s[abcdeghijklmnortvyz]|(t[cdfghjklmnoprtvwz]|travel)|u[agkmsyz]|v[aceginu]|w[fs]|y[etu]|z[amw])$/i
-          return name
-        else
-          raise ArgumentError, "Invalid FQDN: #{name}"
-        end
-      end
+        return false if name.length < 1 or name.length > 255
 
+        return true if name == '.' # the root domain is the only valid domain that begins with a dot
+
+        parts = name.split('.', -1)
+        parts.delete_at(parts.length-1) if parts.last.empty? # the domain may end with a dot
+
+        parts.each do |part|
+          if not part =~ /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/i or part.length < 1 or part.length > 63
+            return false
+          end
+        end
+
+        return true
+      end
     end
   end
 end
