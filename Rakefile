@@ -6,8 +6,7 @@ $:.unshift(File.dirname(__FILE__) + '/lib')
 require 'net/dns'
 
 
-# Run test by default.
-task :default => [:spec]
+task :default => [:spec, :gem]
 
 require 'rake'
 require 'rspec/core/rake_task'
@@ -17,8 +16,10 @@ RSpec::Core::RakeTask.new(:spec) do |t|
   t.rspec_opts = ["-r ./spec/spec_helper.rb"]
 end
 
-require 'yard'
+require 'rubygems/package_task'
+Gem::PackageTask.new(Gem::Specification.load("net-dns.gemspec")).define
 
+require 'yard'
 YARD::Rake::YardocTask.new(:yardoc) do |y|
   y.options = ["--output-dir", "yardoc"]
 end
