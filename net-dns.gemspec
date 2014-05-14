@@ -25,13 +25,13 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/mordocai/net-dns"
   s.require_paths = ["lib"]
-  s.required_ruby_version = Gem::Requirement.new(">= 1.9.1")
   s.summary = "Pure Ruby DNS library, fork with fixes."
 #  s.test_files = [
 #    "spec/fixtures/resolv.conf", "spec/resolver_spec.rb", "spec/spec_helper.rb",
 #    "spec/unit/resolver/dns_timeout_spec.rb", "spec/unit/tcp_timeout_spec.rb",
 #    "spec/unit/udp_timeout_spec.rb"
 #  ]
+  s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
   s.license = 'Ruby'
 
   if s.respond_to? :specification_version then
