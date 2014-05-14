@@ -1,5 +1,27 @@
 # Changelog
 
+## Release 0.8.3
+ - FIXED: Packet size cannot be set issue #1
+ - FIXED: Now raise exception if raw sockets are requested and we are not
+          running as root issue #23
+ - FIXED: Rake can build gem, travis file updated to test up to
+	    ruby-head issue #30
+ - FIXED: Merged in pending bluemonk pull requests issue #29, remaining
+          fixes are from these
+ - FIXED: Cannot get TXT record issue #13
+	  https://github.com/bluemonk/net-dns/pull/42
+ - FIXED: Various fixes by neoraider
+	  https://github.com/bluemonk/net-dns/pull/36
+ - FIXED: query_tcp fix by nbaum
+	  https://github.com/bluemonk/net-dns/pull/63
+ - FIXED: Text fixes by chrislundquist
+	  https://github.com/bluemonk/net-dns/pull/52
+          https://github.com/bluemonk/net-dns/pull/51
+ - CHANGED: Support SPF records by winebarrel
+	    https://github.com/bluemonk/net-dns/pull/57
+ - CHANGED: Simplified nameserver settings
+	    https://github.com/bluemonk/net-dns/pull/60
+
 ## Release 0.8.2
  - FIXED: Exception when using new raw support issue #2
  - FIXED: Gemspec file has wrong emails
