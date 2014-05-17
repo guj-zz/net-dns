@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = "net-dns2"
-  s.version = "0.8.3"
+  s.version = "0.8.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Marco Ceresa", "Simone Carletti", "Christopher Carpenter"]
@@ -19,9 +19,9 @@ Gem::Specification.new do |s|
     "lib/net/dns/rr/a.rb", "lib/net/dns/rr/aaaa.rb", "lib/net/dns/rr/classes.rb",
     "lib/net/dns/rr/cname.rb", "lib/net/dns/rr/hinfo.rb", "lib/net/dns/rr/mr.rb",
     "lib/net/dns/rr/mx.rb", "lib/net/dns/rr/ns.rb", "lib/net/dns/rr/null.rb",
-    "lib/net/dns/rr/ptr.rb", "lib/net/dns/rr/soa.rb", "lib/net/dns/rr/srv.rb",
-    "lib/net/dns/rr/txt.rb", "lib/net/dns/rr/types.rb", "lib/net/dns/version.rb",
-    "net-dns.gemspec"
+    "lib/net/dns/rr/ptr.rb", "lib/net/dns/rr/soa.rb", "lib/net/dns/rr/spf.rb",
+    "lib/net/dns/rr/srv.rb", "lib/net/dns/rr/txt.rb", "lib/net/dns/rr/types.rb",
+    "lib/net/dns/version.rb", "net-dns.gemspec"
   ]
   s.homepage = "http://github.com/mordocai/net-dns"
   s.require_paths = ["lib"]
