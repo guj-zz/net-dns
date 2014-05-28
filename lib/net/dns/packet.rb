@@ -1,4 +1,3 @@
-require 'logger'
 require 'net/dns/names'
 require 'net/dns/header'
 require 'net/dns/question'
@@ -65,18 +64,8 @@ module Net
     #
     # == Logging facility
     #
-    # As Net::DNS::Resolver class, Net::DNS::Packet class has its own logging
-    # facility too. It work in the same way the other one do, so you can
-    # maybe want to override it or change the file descriptor.
-    #
-    #   packet = Net::DNS::Packet.new("www.example.com")
-    #   packet.logger = $stderr
-    #
-    #   # or even
-    #   packet.logger = Logger.new("/tmp/packet.log")
-    #
-    # If the <tt>Net::DNS::Packet</tt> class is directly instantiated by the <tt>Net::DNS::Resolver</tt>
-    # class, like the great majority of the time, it will use the same logger facility.
+    # Logger can be set by using logger= to set the logger to any object that implements
+    # the necessary functions. If no logger is set then no logging is performed.
     #
     # Logger level will be set to <tt>Logger::Debug</tt> if <tt>$DEBUG</tt> variable is set.
     #
@@ -94,6 +83,7 @@ module Net
 
       attr_reader :header, :question, :answer, :authority, :additional
       attr_reader :answerfrom, :answersize
+      @@logger = nil
 
       # Creates a new instance of <tt>Net::DNS::Packet</tt> class. Arguments are the
       # canonical name of the resource, an optional type field and an optional
@@ -120,14 +110,37 @@ module Net
         @answer = []
         @authority = []
         @additional = []
-        @logger = Logger.new $stdout
-        @logger.level = $DEBUG ? Logger::DEBUG : Logger::WARN
       end
-
 
       # Checks if the packet is a QUERY packet
       def query?
         @header.query?
+      end
+
+      def self.logger= logger
+        if logger.respond_to?(:warn) && logger.respond_to?(:debug) && logger.respond_to?(:info)
+          @@logger = logger
+        else
+          raise ArgumentError, "Invalid logger provided to #{self.class}"
+        end
+      end
+
+      def warn *args
+        if @@logger
+          @@logger.warn *args
+        end
+      end
+
+      def debug *args
+        if @@logger
+          @@logger.debug *args
+        end
+      end
+
+      def info *args
+        if @@logger
+          @@logger.info *args
+        end
       end
 
       # Returns the packet object in binary data, suitable
@@ -479,8 +492,6 @@ module Net
 
           @answerfrom = from[2] + ":" + from[1].to_s
           @answersize = data.size
-          @logger = Logger.new $stdout
-          @logger.level = $DEBUG ? Logger::DEBUG : Logger::WARN
 
           #------------------------------------------------------------
           # Header section
@@ -488,34 +499,34 @@ module Net
           offset = Net::DNS::HFIXEDSZ
           @header = Net::DNS::Header.parse(data[0..offset-1])
 
-          @logger.debug ";; HEADER SECTION"
-          @logger.debug @header.inspect
+          debug ";; HEADER SECTION"
+          debug @header.inspect
 
           #------------------------------------------------------------
           # Question section
           #------------------------------------------------------------
           section = @header.opCode == "UPDATE" ? "ZONE" : "QUESTION"
-          @logger.debug ";; #{section} SECTION (#{@header.qdCount} record#{@header.qdCount == 1 ? '': 's'})"
+          debug ";; #{section} SECTION (#{@header.qdCount} record#{@header.qdCount == 1 ? '': 's'})"
 
           @question = []
           @header.qdCount.times do
             qobj,offset = parse_question(data,offset)
             @question << qobj
-            @logger.debug ";; #{qobj.inspect}"
+            debug ";; #{qobj.inspect}"
           end
 
           #------------------------------------------------------------
           # Answer/prerequisite section
           #------------------------------------------------------------
           section = @header.opCode == "UPDATE" ? "PREREQUISITE" : "ANSWER"
-          @logger.debug ";; #{section} SECTION (#{@header.qdCount} record#{@header.qdCount == 1 ? '': 's'})"
+          debug ";; #{section} SECTION (#{@header.qdCount} record#{@header.qdCount == 1 ? '': 's'})"
 
           @answer = []
           @header.anCount.times do
             begin
               rrobj,offset = Net::DNS::RR.parse_packet(data,offset)
               @answer << rrobj
-              @logger.debug rrobj.inspect
+              debug rrobj.inspect
             rescue NameError => e
               warn "Net::DNS unsupported record type: #{e.message}"
             end
@@ -525,14 +536,14 @@ module Net
           # Authority/update section
           #------------------------------------------------------------
           section = @header.opCode == "UPDATE" ? "UPDATE" : "AUTHORITY"
-          @logger.debug ";; #{section} SECTION (#{@header.nsCount} record#{@header.nsCount == 1 ? '': 's'})"
+          debug ";; #{section} SECTION (#{@header.nsCount} record#{@header.nsCount == 1 ? '': 's'})"
 
           @authority = []
           @header.nsCount.times do
             begin
               rrobj,offset = Net::DNS::RR.parse_packet(data,offset)
               @authority << rrobj
-              @logger.debug rrobj.inspect
+              debug rrobj.inspect
             rescue NameError => e
               warn "Net::DNS unsupported record type: #{e.message}"
             end
@@ -541,14 +552,14 @@ module Net
           #------------------------------------------------------------
           # Additional section
           #------------------------------------------------------------
-          @logger.debug ";; ADDITIONAL SECTION (#{@header.arCount} record#{@header.arCount == 1 ? '': 's'})"
+          debug ";; ADDITIONAL SECTION (#{@header.arCount} record#{@header.arCount == 1 ? '': 's'})"
 
           @additional = []
           @header.arCount.times do
             begin
               rrobj,offset = Net::DNS::RR.parse_packet(data,offset)
               @additional << rrobj
-              @logger.debug rrobj.inspect
+              debug rrobj.inspect
             rescue NameError => e
               warn "Net::DNS unsupported record type: #{e.message}"
             end
