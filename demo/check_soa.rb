@@ -68,7 +68,7 @@ ns_req.each_nameserver do |ns|
     # Get the SOA record.
     #----------------------------------------------------------------------
     
-    soa_req = res.send(domain, Net::DNS::SOA, Net::DNS::IN)
+    soa_req = res.query(domain, Net::DNS::SOA, Net::DNS::IN)
     
     if soa_req == nil
       puts res.errorstring, "\n"
