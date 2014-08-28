@@ -29,9 +29,6 @@ end
 
 module Net
   module DNS
-
-    include Logger::Severity
-
     # = Net::DNS::Resolver - DNS resolver class
     #
     # The Net::DNS::Resolver class implements a complete DNS resolver written
@@ -102,7 +99,6 @@ module Net
       # explanation of its usage.
       Defaults = {
         :config_file => "/etc/resolv.conf",
-        :log_file => $stdout,
         :port => 53,
         :searchlist => [],
         :nameservers => [IPAddr.new("127.0.0.1")],
@@ -110,6 +106,7 @@ module Net
         :source_port => 0,
         :source_address => IPAddr.new("0.0.0.0"),
         :source_address_inet6 => IPAddr.new('::'),
+        :spoof_mac => false,
         :interface => "eth0",
         :retry_interval => 5,
         :retry_number => 4,
@@ -123,6 +120,7 @@ module Net
         :udp_timeout => UdpTimeout.new(5),
       }
 
+      @@logger = nil
 
       class << self
 
@@ -246,10 +244,6 @@ module Net
         @config = Defaults.merge config
         @raw = false
 
-        # New logger facility
-        @logger = Logger.new(@config[:log_file])
-        @logger.level = $DEBUG ? Logger::DEBUG : Logger::WARN
-
         #------------------------------------------------------------
         # Resolver configuration will be set in order from:
         # 1) initialize arguments
@@ -274,7 +268,7 @@ module Net
         # Parsing arguments
         #------------------------------------------------------------
         config.each do |key,val|
-          next if key == :log_file or key == :config_file
+          next if key == :config_file
           begin
             eval "self.#{key.to_s} = val"
           rescue NoMethodError
@@ -282,6 +276,35 @@ module Net
           end
         end
       end
+
+      attr_accessor :spoof_mac
+
+      def self.logger= logger
+        if logger.respond_to?(:warn) && logger.respond_to?(:debug) && logger.respond_to?(:info)
+          @@logger = logger
+        else
+          raise ArgumentError, "Invalid logger provided to #{self.class}"
+        end
+      end
+
+      def warn *args
+        if @@logger
+          @@logger.warn *args
+        end
+      end
+
+      def debug *args
+        if @@logger
+          @debug *args
+        end
+      end
+
+      def info *args
+        if @@logger
+          @@logger.info *args
+        end
+      end
+
 
       # Get the resolver search list, returned as an array of entries.
       #
@@ -310,10 +333,10 @@ module Net
         case arg
         when String
           @config[:searchlist] = [arg] if valid? arg
-          @logger.info "Searchlist changed to value #{@config[:searchlist].inspect}"
+          info "Searchlist changed to value #{@config[:searchlist].inspect}"
         when Array
           @config[:searchlist] = arg if arg.all? {|x| valid? x}
-          @logger.info "Searchlist changed to value #{@config[:searchlist].inspect}"
+          info "Searchlist changed to value #{@config[:searchlist].inspect}"
         else
           raise ArgumentError, "Wrong argument format, neither String nor Array"
         end
@@ -346,7 +369,7 @@ module Net
       #
       def nameservers=(arg)
         @config[:nameservers] = convert_nameservers_arg_to_ips(arg)
-        @logger.info "Nameservers list changed to value #{@config[:nameservers].inspect}"
+        info "Nameservers list changed to value #{@config[:nameservers].inspect}"
       end
       alias_method("nameserver=","nameservers=")
 
@@ -368,7 +391,7 @@ module Net
       def packet_size=(arg)
         if arg.respond_to? :to_i
           @config[:packet_size] = arg.to_i
-          @logger.info "Packet size changed to value #{@config[:packet_size].inspect}"
+          info "Packet size changed to value #{@config[:packet_size].inspect}"
         else
           @logger.error "Packet size not set, #{arg.class} does not respond to to_i"
         end
@@ -392,7 +415,7 @@ module Net
       def port=(num)
         if (0..65535).include? num
           @config[:port] = num
-          @logger.info "Port number changed to #{num}"
+          info "Port number changed to #{num}"
         else
           raise ArgumentError, "Wrong port number #{num}"
         end
@@ -479,17 +502,17 @@ module Net
 
         begin
           port = rand(64000)+1024
-          @logger.warn "Try to determine state of source address #{addr} with port #{port}"
+          info "Try to determine state of source address #{addr} with port #{port}"
           a = TCPServer.new(addr.to_s,port)
         rescue SystemCallError => e
           case e.errno
           when 98 # Port already in use!
-            @logger.warn "Port already in use"
+            info "Port already in use"
             retry
           when 99 # Address is not valid: raw socket
             if Process.uid == 0
               @raw = true
-              @logger.warn "Using raw sockets"
+              info "Using raw sockets"
             else
               raise RuntimeError, "Raw sockets requested but not running as root."
             end
@@ -503,10 +526,10 @@ module Net
         case addr
         when String
           @config[:source_address] = IPAddr.new(addr)
-          @logger.info "Using new source address: #{@config[:source_address]}"
+          info "Using new source address: #{@config[:source_address]}"
         when IPAddr
           @config[:source_address] = addr
-          @logger.info "Using new source address: #{@config[:source_address]}"
+          info "Using new source address: #{@config[:source_address]}"
         else
           raise ArgumentError, "Unknown dest_address format"
         end
@@ -528,7 +551,7 @@ module Net
       def retry_interval=(num)
         if num > 0
           @config[:retry_interval] = num
-          @logger.info "Retransmission interval changed to #{num} seconds"
+          info "Retransmission interval changed to #{num} seconds"
         else
           raise ArgumentError, "Interval must be positive"
         end
@@ -548,7 +571,7 @@ module Net
       def retry_number=(num)
         if num.kind_of? Integer and num > 0
           @config[:retry_number] = num
-          @logger.info "Retrasmissions number changed to #{num}"
+          info "Retrasmissions number changed to #{num}"
         else
           raise ArgumentError, "Retry value must be a positive integer"
         end
@@ -577,7 +600,7 @@ module Net
         case bool
         when TrueClass,FalseClass
           @config[:recursive] = bool
-          @logger.info("Recursive state changed to #{bool}")
+          info("Recursive state changed to #{bool}")
         else
           raise ArgumentError, "Argument must be boolean"
         end
@@ -629,7 +652,7 @@ module Net
         case bool
         when TrueClass,FalseClass
           @config[:defname] = bool
-          @logger.info("Defname state changed to #{bool}")
+          info("Defname state changed to #{bool}")
         else
           raise ArgumentError, "Argument must be boolean"
         end
@@ -648,7 +671,7 @@ module Net
         case bool
         when TrueClass,FalseClass
           @config[:dns_search] = bool
-          @logger.info("DNS search state changed to #{bool}")
+          info("DNS search state changed to #{bool}")
         else
           raise ArgumentError, "Argument must be boolean"
         end
@@ -677,7 +700,7 @@ module Net
         case bool
         when TrueClass,FalseClass
           @config[:use_tcp] = bool
-          @logger.info("Use tcp flag changed to #{bool}")
+          info("Use tcp flag changed to #{bool}")
         else
           raise ArgumentError, "Argument must be boolean"
         end
@@ -693,7 +716,7 @@ module Net
         case bool
         when TrueClass,FalseClass
           @config[:ignore_truncated] = bool
-          @logger.info("Ignore truncated flag changed to #{bool}")
+          info("Ignore truncated flag changed to #{bool}")
         else
           raise ArgumentError, "Argument must be boolean"
         end
@@ -729,7 +752,7 @@ module Net
       #
       def tcp_timeout=(secs)
         @config[:tcp_timeout] = TcpTimeout.new(secs)
-        @logger.info("New TCP timeout value: #{@config[:tcp_timeout]} seconds")
+        info("New TCP timeout value: #{@config[:tcp_timeout]} seconds")
       end
 
       # Return an object representing the value of the stored UDP
@@ -765,69 +788,7 @@ module Net
       #
       def udp_timeout=(secs)
         @config[:udp_timeout] = UdpTimeout.new(secs)
-        @logger.info("New UDP timeout value: #{@config[:udp_timeout]} seconds")
-      end
-
-      # Set a new log file for the logger facility of the resolver
-      # class. Could be a file descriptor too:
-      #
-      #   res.log_file = $stderr
-      #
-      # Note that a new logging facility will be create, destroing
-      # the old one, which will then be impossibile to recover.
-      #
-      def log_file=(log)
-        @logger.close
-        @config[:log_file] = log
-        @logger = Logger.new(@config[:log_file])
-        @logger.level = $DEBUG ? Logger::DEBUG : Logger::WARN
-      end
-
-      # This one permits to have a personal logger facility to handle
-      # resolver messages, instead of new built-in one, which is set up
-      # for a +$stdout+ (or +$stderr+) use.
-      #
-      # If you want your own logging facility you can create a new instance
-      # of the +Logger+ class:
-      #
-      #   log = Logger.new("/tmp/resolver.log","weekly",2*1024*1024)
-      #   log.level = Logger::DEBUG
-      #   log.progname = "ruby_resolver"
-      #
-      # and then pass it to the resolver:
-      #
-      #   res.logger = log
-      #
-      # Note that this will destroy the precedent logger.
-      #
-      def logger=(logger)
-        if logger.kind_of? Logger
-          @logger.close
-          @logger = logger
-        else
-          raise ArgumentError, "Argument must be an instance of Logger class"
-        end
-      end
-
-      # Set the log level for the built-in logging facility.
-      #
-      # The log level can be one of the following:
-      #
-      # - +Net::DNS::DEBUG+
-      # - +Net::DNS::INFO+
-      # - +Net::DNS::WARN+
-      # - +Net::DNS::ERROR+
-      # - +Net::DNS::FATAL+
-      #
-      # Note that if the global variable $DEBUG is set (like when the
-      # -d switch is used at the command line) the logger level is
-      # automatically set at DEGUB.
-      #
-      # For further informations, see Logger documentation in the
-      # Ruby standard library.
-      #
-      def log_level=(level)
-        @logger.level = level
+        info("New UDP timeout value: #{@config[:udp_timeout]} seconds")
       end
 
       # Performs a DNS query for the given name, applying the searchlist if
@@ -861,7 +822,7 @@ module Net
 
         # If the name contains at least one dot then try it as is first.
         if name.include? "."
-          @logger.debug "Search(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
+          debug "Search(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
           ans = query(name,type,cls)
           return ans if ans.header.anCount > 0
         end
@@ -870,14 +831,14 @@ module Net
         if name !~ /\.$/ and @config[:dns_search]
           @config[:searchlist].each do |domain|
             newname = name + "." + domain
-            @logger.debug "Search(#{newname},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
+            debug "Search(#{newname},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
             ans = query(newname,type,cls)
             return ans if ans.header.anCount > 0
           end
         end
 
         # Finally, if the name has no dots then try it as is.
-        @logger.debug "Search(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
+        debug "Search(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
         query(name+".",type,cls)
 
       end
@@ -915,7 +876,7 @@ module Net
           name += "." + @config[:domain]
         end
 
-        @logger.debug "Query(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
+        debug "Query(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
 
         send(name,type,cls)
 
@@ -970,31 +931,31 @@ module Net
         # Choose whether use TCP, UDP or RAW
         if packet_size > @config[:packet_size] # Must use TCP, either plain or raw
           if @raw # Use raw sockets?
-            @logger.info "Sending #{packet_size} bytes using TCP over RAW socket"
+            info "Sending #{packet_size} bytes using TCP over RAW socket"
             method = :send_raw_tcp
           else
-            @logger.info "Sending #{packet_size} bytes using TCP"
+            info "Sending #{packet_size} bytes using TCP"
             method = :query_tcp
           end
         else # Packet size is inside the boundaries
           if @raw # Use raw sockets?
-            @logger.info "Sending #{packet_size} bytes using UDP over RAW socket"
+            info "Sending #{packet_size} bytes using UDP over RAW socket"
             method = :send_raw_udp
           elsif use_tcp? # User requested TCP
-            @logger.info "Sending #{packet_size} bytes using TCP"
+            info "Sending #{packet_size} bytes using TCP"
             method = :query_tcp
           else # Finally use UDP
-            @logger.info "Sending #{packet_size} bytes using UDP"
+            info "Sending #{packet_size} bytes using UDP"
             method = :query_udp
           end
         end
 
         if type == Net::DNS::AXFR
           if @raw
-            @logger.warn "AXFR query, switching to TCP over RAW socket"
+            info "AXFR query, switching to TCP over RAW socket"
             method = :send_raw_tcp
           else
-            @logger.warn "AXFR query, switching to TCP"
+            info "AXFR query, switching to TCP"
             method = :query_tcp
           end
         end
@@ -1013,11 +974,11 @@ module Net
           raise NoResponseError, message
         end
 
-        @logger.info "Received #{ans[0].size} bytes from #{ans[1][2]+":"+ans[1][1].to_s}"
+        info "Received #{ans[0].size} bytes from #{ans[1][2]+":"+ans[1][1].to_s}"
         response = Net::DNS::Packet.parse(ans[0],ans[1])
 
         if response.header.truncated? and not ignore_truncated?
-          @logger.warn "Packet truncated, retrying using TCP"
+          info "Packet truncated, retrying using TCP"
           self.use_tcp = true
           begin
             return query(argument,type,cls)
@@ -1035,7 +996,7 @@ module Net
       # since it is using the same infrastucture.
       #
       def axfr(name, cls = Net::DNS::IN)
-        @logger.info "Requested AXFR transfer, zone #{name} class #{cls}"
+        info "Requested AXFR transfer, zone #{name} class #{cls}"
         query(name, Net::DNS::AXFR, cls)
       end
 
@@ -1173,15 +1134,15 @@ module Net
 
             @config[:tcp_timeout].timeout do
               socket.connect(sockaddr)
-              @logger.info "Contacting nameserver #{ns} port #{@config[:port]}"
+              info "Contacting nameserver #{ns} port #{@config[:port]}"
               socket.write(length+packet_data)
               ans = socket.recv(Net::DNS::INT16SZ)
               len = ans.unpack("n")[0]
 
-              @logger.info "Receiving #{len} bytes..."
+              info "Receiving #{len} bytes..."
 
               if len == 0
-                @logger.warn "Receiving 0 lenght packet from nameserver #{ns}, trying next."
+                info "Receiving 0 lenght packet from nameserver #{ns}, trying next."
                 next
               end
 
@@ -1192,13 +1153,13 @@ module Net
               end
 
               unless buffer.size == len
-                @logger.warn "Malformed packet from nameserver #{ns}, trying next."
+                info "Malformed packet from nameserver #{ns}, trying next."
                 next
               end
             end
             return [buffer,["",@config[:port],ns.to_s,ns.to_s]]
           rescue TimeoutError
-            @logger.warn "Nameserver #{ns} not responding within TCP timeout, trying next one"
+            info "Nameserver #{ns} not responding within TCP timeout, trying next one"
             next
           ensure
             socket.close
@@ -1220,7 +1181,7 @@ module Net
         @config[:nameservers].each do |ns|
           begin
             @config[:udp_timeout].timeout do
-              @logger.info "Contacting nameserver #{ns} port #{@config[:port]}"
+              info "Contacting nameserver #{ns} port #{@config[:port]}"
               ans = if ns.ipv6?
                 socket6.send(packet_data, 0, ns.to_s, @config[:port])
                 socket6.recvfrom(@config[:packet_size])
@@ -1231,7 +1192,7 @@ module Net
             end
             break if ans
           rescue TimeoutError
-            @logger.warn "Nameserver #{ns} not responding within UDP timeout, trying next one"
+            info "Nameserver #{ns} not responding within UDP timeout, trying next one"
             next
           end
         end
@@ -1248,13 +1209,17 @@ module Net
           octet.read_quad @config[:source_address].to_s
           packet.ip_src = octet
           packet.udp_src =rand(0xffff-1024) + 1024
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          end
         elsif @config[:source_address_inet6]
           octet = PacketFu::Octets.new
           octet.read_quad @config[:source_address_inet6].to_s
           packet.ip_src = octet
           packet.udp_src = @config[:source_address_inet6].to_i
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          end
         else
           raise ArgumentError, "No source address specified, cannot send"
         end
@@ -1281,13 +1246,17 @@ module Net
           octet.read_quad @config[:source_address].to_s
           packet.ip_src = octet
           packet.udp_src =rand(0xffff-1024) + 1024
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          end
         elsif @config[:source_address_inet6]
           octet = PacketFu::Octets.new
           octet.read_quad @config[:source_address_inet6].to_s
           packet.ip_src = octet
           packet.udp_src = @config[:source_address_inet6].to_i
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          end
         else
           raise ArgumentError, "No source address specified, cannot send"
         end

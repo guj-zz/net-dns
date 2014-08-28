@@ -1,12 +1,14 @@
 # -*- encoding: utf-8 -*-
 
+require 'date'
+
 Gem::Specification.new do |s|
   s.name = "net-dns2"
-  s.version = "0.8.4"
+  s.version = "0.8.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Marco Ceresa", "Simone Carletti", "Christopher Carpenter"]
-  s.date = "2014-05-12"
+  s.date = Date.today.to_s
   s.description = "Net::DNS is a pure Ruby DNS library, with a clean OO interface and an extensible API. The net-dns2 ruby gem is an actively maintained fork of the original net-dns."
   s.email = "mordocai@mordocai.net"
   s.files = [
@@ -26,11 +28,6 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/mordocai/net-dns"
   s.require_paths = ["lib"]
   s.summary = "Pure Ruby DNS library, fork with fixes."
-#  s.test_files = [
-#    "spec/fixtures/resolv.conf", "spec/resolver_spec.rb", "spec/spec_helper.rb",
-#    "spec/unit/resolver/dns_timeout_spec.rb", "spec/unit/tcp_timeout_spec.rb",
-#    "spec/unit/udp_timeout_spec.rb"
-#  ]
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
   s.license = 'Ruby'
 

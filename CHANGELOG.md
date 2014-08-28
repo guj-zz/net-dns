@@ -1,5 +1,15 @@
 # Changelog
 
+## Release 0.8.5
+ - FIXED: Disable logger by default and change logger behaivior issue #20
+ - FIXED: Logger and log4j [feature request] issue #16
+ - FIXED: Resolver#logger= should not call close on old logger issue #3
+ - FIXED: Could not disable mac source_address spoofing, added option
+ - MERGED: Pull request #33, switches to enumerators
+
+## Release 0.8.4
+ - FIXED: Missing file for new spf record, pull/57
+
 ## Release 0.8.3
  - FIXED: Packet size cannot be set issue #1
  - FIXED: Now raise exception if raw sockets are requested and we are not
