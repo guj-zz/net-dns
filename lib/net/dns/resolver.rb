@@ -106,6 +106,7 @@ module Net
         :source_port => 0,
         :source_address => IPAddr.new("0.0.0.0"),
         :source_address_inet6 => IPAddr.new('::'),
+        :spoof_mac => false,
         :interface => "eth0",
         :retry_interval => 5,
         :retry_number => 4,
@@ -1206,13 +1207,17 @@ module Net
           octet.read_quad @config[:source_address].to_s
           packet.ip_src = octet
           packet.udp_src =rand(0xffff-1024) + 1024
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          end
         elsif @config[:source_address_inet6]
           octet = PacketFu::Octets.new
           octet.read_quad @config[:source_address_inet6].to_s
           packet.ip_src = octet
           packet.udp_src = @config[:source_address_inet6].to_i
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          end
         else
           raise ArgumentError, "No source address specified, cannot send"
         end
@@ -1239,13 +1244,17 @@ module Net
           octet.read_quad @config[:source_address].to_s
           packet.ip_src = octet
           packet.udp_src =rand(0xffff-1024) + 1024
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address].to_s, {iface: @config[:interface]})
+          end
         elsif @config[:source_address_inet6]
           octet = PacketFu::Octets.new
           octet.read_quad @config[:source_address_inet6].to_s
           packet.ip_src = octet
           packet.udp_src = @config[:source_address_inet6].to_i
-          packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          if @config[:spoof_mac]
+            packet.eth_saddr = PacketFu::Utils.arp(@config[:source_address_inet6].to_s, {iface: @config[:interface]})
+          end
         else
           raise ArgumentError, "No source address specified, cannot send"
         end
