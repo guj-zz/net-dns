@@ -277,6 +277,8 @@ module Net
         end
       end
 
+      attr_accessor :spoof_mac
+
       def self.logger= logger
         if logger.respond_to?(:warn) && logger.respond_to?(:debug) && logger.respond_to?(:info)
           @@logger = logger
