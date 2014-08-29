@@ -1,5 +1,8 @@
 # Changelog
 
+## Release 0.8.6
+ - FIXED: Removed lookup of desitination mac address from send_raw* queries.
+
 ## Release 0.8.5
  - FIXED: Disable logger by default and change logger behaivior issue #20
  - FIXED: Logger and log4j [feature request] issue #16
