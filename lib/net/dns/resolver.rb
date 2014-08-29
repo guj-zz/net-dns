@@ -1226,7 +1226,6 @@ module Net
 
         @config[:nameservers].each do |ns|
           octet = PacketFu::Octets.new
-          packet.eth_daddr = PacketFu::Utils.arp(ns.to_s, {iface: @config[:interface]})
           octet.read_quad ns.to_s
           packet.ip_dst = octet
           packet.udp_dst = 53
@@ -1263,7 +1262,6 @@ module Net
 
         @config[:nameservers].each do |ns|
           octet = PacketFu::Octets.new
-          packet.eth_daddr = PacketFu::Utils.arp(ns.to_s, {iface: @config[:interface]})
           octet.read_quad ns.to_s
           packet.ip_dst = octet
           packet.udp_dst = 53
