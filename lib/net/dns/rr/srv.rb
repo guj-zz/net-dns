@@ -12,6 +12,15 @@ module Net # :nodoc:
         
         attr_reader :priority, :weight, :port, :host
         
+        # Gets the standardized value for this record,
+        # represented by the value of <tt>port</tt>, <tt>priority</tt>,
+        # <tt>weight</tt>, and <tt>host</tt>.
+        #
+        # Returns a String.
+        def value
+          "#{port} #{priority} #{weight} #{host}"
+        end
+
         private
         
         def build_pack
@@ -39,6 +48,10 @@ module Net # :nodoc:
         
         def set_type
           @type = Net::DNS::RR::Types.new("SRV")
+        end
+
+        def get_inspect
+          value
         end
 
         def get_data
