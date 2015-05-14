@@ -3,7 +3,10 @@ module Net # :nodoc:
     class RR
       
       #------------------------------------------------------------
-      # RR type SRV
+      # RR type SRV (RFC2052)
+      # A DNS RR for specifying the location of services (DNS SRV),
+      # contains the location of the server(s) for a specific
+      # protocol and domain (like a more general form of MX).
       #------------------------------------------------------------
       class SRV < RR
         
@@ -12,9 +15,11 @@ module Net # :nodoc:
         private
         
         def build_pack
-          str = ""
+          @srv_pack = [@port, @priority, @weight].pack("n n n")
+          @srv_pack += pack_name(@host)
+          @rdlength = @srv_pack.size
         end
-        
+
         def subclass_new_from_binary(data,offset)
           off_end = offset + @rdlength
           @priority, @weight, @port = data.unpack("@#{offset} n n n")
@@ -32,11 +37,13 @@ module Net # :nodoc:
           offset
         end
         
-        private
-        
-          def set_type
-            @type = Net::DNS::RR::Types.new("SRV")
-          end
+        def set_type
+          @type = Net::DNS::RR::Types.new("SRV")
+        end
+
+        def get_data
+          @srv_pack
+        end
         
       end
     end
