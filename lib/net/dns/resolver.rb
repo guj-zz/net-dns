@@ -843,45 +843,6 @@ module Net
 
       end
 
-      # Performs a DNS query for the given name; the search list
-      # is not applied.  If the name doesn't contain any dots and
-      # +defname+ is true then the default domain will be appended.
-      #
-      # The record type and class can be omitted; they default to +A+
-      # and +IN+.  If the name looks like an IP address (IPv4 or IPv6),
-      # then an appropriate PTR query will be performed.
-      #
-      #   packet = res.query('mailhost')
-      #   packet = res.query('mailhost.example.com')
-      #   packet = res.query('example.com', Net::DNS::MX)
-      #   packet = res.query('user.passwd.example.com', Net::DNS::TXT, Net::DNS::HS)
-      #
-      # If the name is an IP address (Ipv4 or IPv6), in the form of a string
-      # or a +IPAddr+ object, then an appropriate PTR query will be performed:
-      #
-      #   ip = IPAddr.new("172.16.100.2")
-      #   packet = res.query(ip)
-      #   packet = res.query("192.168.10.254")
-      #
-      # Returns a Net::DNS::Packet object. If you need to examine the response
-      # packet whether it contains any answers or not, use the Resolver#query
-      # method instead.
-      #
-      def query(name,type=Net::DNS::A,cls=Net::DNS::IN)
-
-        return send(name,type,cls) if name.class == IPAddr
-
-        # If the name doesn't contain any dots then append the default domain.
-        if name !~ /\./ and name !~ /:/ and @config[:defname]
-          name += "." + @config[:domain]
-        end
-
-        debug "Query(#{name},#{Net::DNS::RR::Types.new(type)},#{Net::DNS::RR::Classes.new(cls)})"
-
-        send(name,type,cls)
-
-      end
-
       # Performs a DNS query for the given name.  Neither the
       # searchlist nor the default domain will be appended.
       #
