@@ -970,7 +970,9 @@ module Net
 
         if not ans
           message = "No response from nameservers list"
-          @logger.fatal(message)
+          # NoMethodError: undefined method `fatal' for nil:NilClass
+          #@logger.fatal(message)
+          warn(message)
           raise NoResponseError, message
         end
 
