@@ -1,5 +1,11 @@
 # Changelog
 
+## Release 0.8.7
+ - MERGED: Pull Request #32 Use query instead of send in demo code
+ - MERGED: Pull Request #36 Fix invalid usage logger.fatal
+ - MERGED: Pull Request #37 Fix crashes for DNS::RR and fix DNS::Packet missing methods.
+ - MERGED: Pull Request #38 Remove duplicate def of query
+
 ## Release 0.8.6
  - FIXED: Removed lookup of desitination mac address from send_raw* queries.
 
